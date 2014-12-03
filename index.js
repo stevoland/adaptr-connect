@@ -4,6 +4,7 @@ var fs = require('fs');
 var url = require('url');
 var querystring = require('querystring');
 var objectAssign = require('object-assign');
+var interpolate = require('interpolate');
 var debug = require('debug')('adaptr');
 
 var defaultOptions = {
@@ -44,19 +45,31 @@ module.exports = function (options) {
   }
 
   function getClientMarkup (clientTemplate, serverPath, requestId) {
-    clientTemplate = clientTemplate
-      .replace(/{{requestId}}/g, requestId)
-      .replace(/{{serverPath}}/g, serverPath);
+    clientTemplate = interpolate(clientTemplate, {
+      requestId: requestId,
+      serverPath: serverPath
+    });
 
-    return '<script>' + clientTemplate + '</script>';
+    var markup = '<script>' + clientTemplate + '</script>';
+
+    markup += interpolate('<link href="{serverPath}.css?id={requestId}" rel="stylesheet" />', {
+      requestId: requestId,
+      serverPath: serverPath
+    });
+
+    return markup;
   }
 
   return {
     middleware: function (startHead, routeCallback) {
       return function (req, res, next) {
-        if (req.path === options.serverPath) {
+        if (req.path.indexOf(options.serverPath) === 0) {
 
-          res.writeHead(200, {'Content-Type': 'text/javascript'});
+          if (/\.css$/.test(req.path)) {
+            res.writeHead(200, {'Content-Type': 'text/css'});
+          } else {
+            res.writeHead(200, {'Content-Type': 'text/javascript'});
+          }
           res.end('');
 
           var info = url.parse(req.url);
@@ -67,6 +80,7 @@ module.exports = function (options) {
 
             resolveRequest(id, query);
           }
+
           next();
           return;
         }

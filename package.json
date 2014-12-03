@@ -4,7 +4,8 @@
   "private": true,
   "dependencies": {
     "object-assign": "^2.0.0",
-    "debug": "^2.1.0"
+    "debug": "^2.1.0",
+    "interpolate": "^0.1.0"
   },
   "devDependencies": {},
   "engines": {
