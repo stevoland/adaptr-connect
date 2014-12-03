@@ -2,7 +2,7 @@
 
 WIP
 
-Client feature detection on the server
+Client feature detection on your server
 
 ## Concept
 
@@ -24,7 +24,6 @@ this process for subsequent requests.
 
 ## Prior art
 
-Based on: [this gist](https://gist.github.com/fdecampredon/86ccbba3863bccaec7dd)
-
-[Yiibu Profile](https://github.com/yiibu/profile)
-[Yiibu Bento](https://github.com/yiibu/bento)
+* Based on: [this gist](https://gist.github.com/fdecampredon/86ccbba3863bccaec7dd)
+* [Yiibu Profile](https://github.com/yiibu/profile)
+* [Yiibu Bento](https://github.com/yiibu/bento)
