@@ -9,7 +9,9 @@
     "debounce": "^1.0.0",
     "cookie": "^0.1.2"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "eslint": "^0.10.0"
+  },
   "engines": {
     "node": ">=0.10.0",
     "npm": "1.2.x"

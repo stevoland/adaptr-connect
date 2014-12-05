@@ -2,12 +2,14 @@
   (function (d) {
     "use strict";
 
-    var src = '{serverPath}.js?id='+ {requestId} +
-      '&profile=' + encodeURIComponent(
-        JSON.stringify({
+    function getSettings () {
+      return JSON.stringify({
           viewportWidth: d.documentElement.clientWidth
-        })
-      );
+        });
+    }
+
+    var src = '{serverPath}.js?id='+ {requestId} +
+      '&profile=' + encodeURIComponent(getSettings());
 
     d.write('<script src="' + src + '"></'+'script>');
   }(document));

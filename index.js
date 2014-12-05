@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 var fs = require('fs');
 var url = require('url');
@@ -44,7 +44,7 @@ var adaptr = function (options) {
 
     pendingRequests[id] = {
       timeout: setTimeout(function () {
-          resolveRequest(id, new Profile);
+          resolveRequest(id, new Profile());
         }, timeoutPeriod),
       callback: continueCallback
     };
@@ -67,6 +67,7 @@ var adaptr = function (options) {
     middleware: function (startHead, routeCallback) {
       return function (req, res, next) {
         var data;
+        var requestId;
 
         if (req.path.indexOf(options.serverPath) === 0) {
           res.writeHead(200, {
@@ -94,10 +95,11 @@ var adaptr = function (options) {
         }
 
         var cookies = cookie.parse(req.headers.cookie);
-        var cookieValue = cookie[options.cookieName];
+        var cookieValue = cookies[options.cookieName];
 
         var callback = function (profile) {
           routeCallback(req, res, next, profile);
+          debug('Resolved request: ' + requestId);
         };
 
         if (cookieValue) {
@@ -106,10 +108,9 @@ var adaptr = function (options) {
           } catch (e) {}
         }
 
-        var requestId;
-
         if (!data) {
           requestId = pauseRequest(callback, options.timeout);
+          debug('Paused request: ' + requestId);
         }
 
         if (routeCallback) {
