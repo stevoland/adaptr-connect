@@ -32,6 +32,7 @@ var adaptr = function (options) {
     if (pendingRequests[id]) {
       clearTimeout(pendingRequests[id].timeout);
       pendingRequests[id].callback(profile);
+      debug('Resolved request: ' + id);
     }
 
     delete pendingRequests[id];
@@ -52,14 +53,17 @@ var adaptr = function (options) {
     return id;
   }
 
-  function getClientMarkup (clientTemplate, serverPath, requestId) {
+  function getClientMarkup (clientTemplate, requestId, options) {
     if (requestId == null) {
       return '';
     }
 
     return interpolate(clientTemplate, {
       requestId: requestId,
-      serverPath: serverPath
+      serverPath: options.serverPath,
+      cookieName: options.cookieName,
+      cookiePath: options.cookiePath,
+      cookieMaxAge: options.cookieMaxAge
     });
   }
 
@@ -99,7 +103,6 @@ var adaptr = function (options) {
 
         var callback = function (profile) {
           routeCallback(req, res, next, profile);
-          debug('Resolved request: ' + requestId);
         };
 
         if (cookieValue) {
@@ -121,7 +124,7 @@ var adaptr = function (options) {
         }
 
         startHead(req, res);
-        res.write(getClientMarkup(clientTemplate, options.serverPath, requestId));
+        res.write(getClientMarkup(clientTemplate, requestId, options));
 
         if (data) {
           callback(new Profile(data));
