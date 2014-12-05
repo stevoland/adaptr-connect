@@ -6,7 +6,14 @@ var port = 4000;
 
 var adaptr = require('../index');
 var adaptrInstance = adaptr({
-    timeout: 5000
+    timeout: 5000,
+    detect: {
+      viewportWidth: {
+        defaultValue: 960,
+        test: adaptr.tests.viewportWidth,
+        update: adaptr.updaters.windowResize
+      }
+    }
 });
 
 
@@ -17,7 +24,7 @@ var writeStartHead = function (req, res) {
 var writeBody = function (req, res, next, profile) {
   res.write('</head>');
   res.write('<body>');
-  res.write('test');
+  res.write('<pre>' + profile.toJSON() + '</pre>');
   res.end('</body></html>');
 };
 

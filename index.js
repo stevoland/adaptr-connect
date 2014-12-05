@@ -5,6 +5,7 @@ var url = require('url');
 var querystring = require('querystring');
 var objectAssign = require('object-assign');
 var interpolate = require('interpolate');
+var Profile = require('./lib/Profile');
 var debug = require('debug')('adaptr');
 
 var defaultOptions = {
@@ -12,19 +13,19 @@ var defaultOptions = {
   serverPath: '/adaptr'
 };
 
-var clientTemplate = fs.readFileSync('client.js', 'UTF-8');
+var clientTemplate = fs.readFileSync('client.html', 'UTF-8');
 
-var defaultStartHead = '<!DOCTYPE html><html><head><meta charset="utf-8"/>';
+var defaultStartHead = '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8"/>';
 
-module.exports = function (options) {
+var adaptr = function (options) {
   var uidHelper = 0;
   var pendingRequests = {};
 
   options = objectAssign(defaultOptions, options);
 
-  function resolveRequest (id, data) {
+  function resolveRequest (id, profile) {
     if (pendingRequests[id]) {
-      pendingRequests[id]();
+      pendingRequests[id](profile);
     }
 
     delete pendingRequests[id];
@@ -45,48 +46,43 @@ module.exports = function (options) {
   }
 
   function getClientMarkup (clientTemplate, serverPath, requestId) {
-    clientTemplate = interpolate(clientTemplate, {
+    return interpolate(clientTemplate, {
       requestId: requestId,
       serverPath: serverPath
     });
-
-    var markup = '<script>' + clientTemplate + '</script>';
-
-    markup += interpolate('<link href="{serverPath}.css?id={requestId}" rel="stylesheet" />', {
-      requestId: requestId,
-      serverPath: serverPath
-    });
-
-    return markup;
   }
 
   return {
     middleware: function (startHead, routeCallback) {
       return function (req, res, next) {
         if (req.path.indexOf(options.serverPath) === 0) {
-
-          if (/\.css$/.test(req.path)) {
-            res.writeHead(200, {'Content-Type': 'text/css'});
-          } else {
-            res.writeHead(200, {'Content-Type': 'text/javascript'});
-          }
+          res.writeHead(200, {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+            'Content-Type': (/\.css$/.test(req.path)) ?
+              'text/css' : 'text/javascript'
+          });
           res.end('');
 
           var info = url.parse(req.url);
           if (info && info.query) {
             var query = querystring.parse(info.query);
-            var id = query.id;
-            delete query.id;
+            var data;
 
-            resolveRequest(id, query);
+            try {
+              data = JSON.parse(query.profile);
+            } catch (e) {}
+
+            var profile = new Profile(data);
+            resolveRequest(query.id, profile);
           }
 
-          next();
           return;
         }
 
-        var requestId = pauseRequest(function () {
-          routeCallback(req, res, next);
+        var requestId = pauseRequest(function (profile) {
+          routeCallback(req, res, next, profile);
         }, options.timeout);
 
         if (routeCallback) {
@@ -101,3 +97,8 @@ module.exports = function (options) {
     }
   };
 };
+
+adaptr.tests = require('./lib/tests');
+adaptr.updaters = require('./lib/updaters');
+
+module.exports = adaptr;

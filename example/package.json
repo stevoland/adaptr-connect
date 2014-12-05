@@ -2,6 +2,9 @@
   "name": "adaptr-example",
   "version": "0.0.0",
   "private": true,
+  "scripts": {
+    "start": "DEBUG=adaptr ./node_modules/.bin/supervisor -w .. app.js"
+  },
   "dependencies": {
     "express": "~4"
   },

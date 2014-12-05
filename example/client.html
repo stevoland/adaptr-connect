@@ -1,0 +1,17 @@
+<script>
+  (function (d) {
+    "use strict";
+
+    var src = '{serverPath}.js?id='+ {requestId} +
+      '&profile=' + encodeURIComponent(
+        JSON.stringify({
+          viewportWidth: d.documentElement.clientWidth
+        })
+      );
+
+    d.write('<script src="' + src + '"></'+'script>');
+  }(document));
+</script>
+<noscript>
+  <link href="{serverPath}.css?id={requestId}" rel="stylesheet" />
+</noscript>
