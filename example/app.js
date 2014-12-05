@@ -2,6 +2,8 @@
 
 var express = require('express');
 var app = express();
+var favicon = require('serve-favicon');
+var path = require('path');
 var port = 4000;
 
 var adaptr = require('../index');
@@ -27,6 +29,8 @@ var writeBody = function (req, res, next, profile) {
   res.write('<pre>' + profile.toJSON() + '</pre>');
   res.end('</body></html>');
 };
+
+app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 
 app.get(
   '*',
