@@ -50,6 +50,8 @@ var adaptr = function (options) {
       callback: continueCallback
     };
 
+    debug('Paused request: ' + id);
+
     return id;
   }
 
@@ -73,7 +75,8 @@ var adaptr = function (options) {
         var data;
         var requestId;
 
-        if (req.path.indexOf(options.serverPath) === 0) {
+        if (req.path.indexOf(options.serverPath + '.js') === 0 ||
+            req.path.indexOf(options.serverPath + '.css') === 0) {
           res.writeHead(200, {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
@@ -113,7 +116,6 @@ var adaptr = function (options) {
 
         if (!data) {
           requestId = pauseRequest(callback, options.timeout);
-          debug('Paused request: ' + requestId);
         }
 
         if (routeCallback) {
