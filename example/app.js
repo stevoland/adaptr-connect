@@ -12,8 +12,8 @@ var adaptrInstance = adaptr({
     detect: {
       viewportWidth: {
         defaultValue: 960,
-        test: adaptr.tests.viewportWidth,
-        update: adaptr.updaters.windowResize
+        test: '../tests/viewportWidth',
+        update: '../updaters/viewportWidth'
       }
     }
 });

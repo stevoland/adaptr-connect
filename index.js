@@ -69,6 +69,31 @@ var adaptr = function (options) {
     });
   }
 
+  function serveBeacon (req, res) {
+    var data;
+
+    res.writeHead(200, {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'Content-Type': (/\.css$/.test(req.path)) ?
+        'text/css' : 'text/javascript'
+    });
+    res.end('');
+
+    var info = url.parse(req.url);
+    if (info && info.query) {
+      var query = querystring.parse(info.query);
+
+      try {
+        data = JSON.parse(query.profile);
+      } catch (e) {}
+
+      var profile = new Profile(data);
+      resolveRequest(query.id, profile);
+    }
+  }
+
   return {
     middleware: function (startHead, routeCallback) {
       return function (req, res, next) {
@@ -77,27 +102,7 @@ var adaptr = function (options) {
 
         if (req.path.indexOf(options.serverPath + '.js') === 0 ||
             req.path.indexOf(options.serverPath + '.css') === 0) {
-          res.writeHead(200, {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0',
-            'Content-Type': (/\.css$/.test(req.path)) ?
-              'text/css' : 'text/javascript'
-          });
-          res.end('');
-
-          var info = url.parse(req.url);
-          if (info && info.query) {
-            var query = querystring.parse(info.query);
-
-            try {
-              data = JSON.parse(query.profile);
-            } catch (e) {}
-
-            var profile = new Profile(data);
-            resolveRequest(query.id, profile);
-          }
-
+          serveBeacon(req, res);
           return;
         }
 
@@ -135,8 +140,5 @@ var adaptr = function (options) {
     }
   };
 };
-
-adaptr.tests = require('./lib/tests');
-adaptr.updaters = require('./lib/updaters');
 
 module.exports = adaptr;
