@@ -3,6 +3,7 @@
 var express = require('express');
 var app = express();
 var favicon = require('serve-favicon');
+var fs = require('fs');
 var path = require('path');
 var port = 4000;
 
@@ -12,8 +13,8 @@ var adaptrInstance = adaptr({
     detect: {
       viewportWidth: {
         defaultValue: 960,
-        test: '../tests/viewportWidth',
-        update: '../updaters/viewportWidth'
+        test: './lib/tests/viewportWidth.js',
+        update: './lib/updaters/viewportWidth'
       }
     }
 });

@@ -1,24 +1,23 @@
 'use strict';
 
-var fs = require('fs');
-var url = require('url');
-var querystring = require('querystring');
-var objectAssign = require('object-assign');
-var interpolate = require('interpolate');
+var browserify = require('browserify');
 var cookie = require('cookie');
-var path = require('path');
-var Profile = require('./lib/Profile');
 var debug = require('debug')('adaptr');
+var interpolate = require('interpolate');
+var url = require('url');
+var objectAssign = require('object-assign');
+var querystring = require('querystring');
+
+var Profile = require('./lib/Profile');
 
 var defaultOptions = {
   timeout: 1000,
   cookieName: 'adaptr',
   cookieMaxAge: 1000 * 60 * 60,
   cookiePath: '/',
-  serverPath: '/adaptr'
+  serverPath: '/adaptr',
+  clientVarName: 'adaptr'
 };
-
-var clientTemplate = fs.readFileSync(path.join(__dirname, 'client.html'), 'UTF-8');
 
 var defaultStartHead = '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8"/>';
 
@@ -55,17 +54,42 @@ var adaptr = function (options) {
     return id;
   }
 
-  function getClientMarkup (clientTemplate, requestId, options) {
-    if (requestId == null) {
-      return '';
-    }
+  function getClientMarkup (requestId, options, callback) {
+    var b = browserify(['./lib/client/client'], {
+      basedir: __dirname
+    });
 
-    return interpolate(clientTemplate, {
-      requestId: requestId,
-      serverPath: options.serverPath,
-      cookieName: options.cookieName,
-      cookiePath: options.cookiePath,
-      cookieMaxAge: options.cookieMaxAge
+    debug(options.detect);
+    Object.keys(options.detect).forEach(function (key) {
+      b.require(options.detect[key].test);
+    });
+
+    b.bundle(function (err, buffer) {
+      var markup = '';
+
+      if (err) {
+        debug(err);
+      } else {
+        markup = '<script>' + buffer.toString() + '</script>';
+
+        if (options.requestBeacon) {
+          markup += '<noscript>' +
+            '<link href="{serverPath}.css?id={requestId}" rel="stylesheet" />' +
+            '<noscript>';
+        }
+
+        markup = interpolate(markup, {
+          requestId: requestId,
+          serverPath: options.serverPath,
+          cookieName: options.cookieName,
+          cookiePath: options.cookiePath,
+          cookieMaxAge: options.cookieMaxAge,
+          requestBeacon: options.requestBeacon ? '1' : '',
+          detect: JSON.stringify(options.detect)
+        });
+      }
+
+      callback(markup);
     });
   }
 
@@ -99,6 +123,7 @@ var adaptr = function (options) {
       return function (req, res, next) {
         var data;
         var requestId;
+        var scriptOptions;
 
         if (req.path.indexOf(options.serverPath + '.js') === 0 ||
             req.path.indexOf(options.serverPath + '.css') === 0) {
@@ -106,7 +131,7 @@ var adaptr = function (options) {
           return;
         }
 
-        var cookies = cookie.parse(req.headers.cookie);
+        var cookies = cookie.parse(req.headers.cookie || '');
         var cookieValue = cookies[options.cookieName];
 
         var callback = function (profile) {
@@ -130,12 +155,22 @@ var adaptr = function (options) {
           res.write(defaultStartHead);
         }
 
-        startHead(req, res);
-        res.write(getClientMarkup(clientTemplate, requestId, options));
+        scriptOptions = {
+          serverPath: options.serverPath,
+          cookieName: options.cookieName,
+          cookiePath: options.cookiePath,
+          cookieMaxAge: options.cookieMaxAge,
+          detect: options.detect,
+          requestBeacon: !data
+        };
 
-        if (data) {
-          callback(new Profile(data));
-        }
+        getClientMarkup(requestId, scriptOptions, function (markup) {
+          res.write(markup);
+
+          if (data) {
+            callback(new Profile(data));
+          }
+        });
       };
     }
   };
