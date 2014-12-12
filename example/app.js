@@ -3,7 +3,6 @@
 var express = require('express');
 var app = express();
 var favicon = require('serve-favicon');
-var fs = require('fs');
 var path = require('path');
 var port = 4000;
 
@@ -13,7 +12,7 @@ var adaptrInstance = adaptr({
     detect: {
       viewportWidth: {
         defaultValue: 960,
-        test: './lib/tests/viewportWidth.js',
+        test: './lib/tests/viewportWidth',
         update: './lib/updaters/viewportWidth'
       }
     }
@@ -27,7 +26,7 @@ var writeStartHead = function (req, res) {
 var writeBody = function (req, res, next, profile) {
   res.write('</head>');
   res.write('<body>');
-  res.write('<pre>' + profile.toJSON() + '</pre>');
+  res.write('<pre>' + JSON.stringify(profile) + '</pre>');
   res.end('</body></html>');
 };
 

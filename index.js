@@ -2,7 +2,8 @@
 
 var browserify = require('browserify');
 var cookie = require('cookie');
-var debug = require('debug')('adaptr');
+var debug = require('debug')('adaptr:log');
+var error = require('debug')('adaptr:error');
 var interpolate = require('interpolate');
 var url = require('url');
 var objectAssign = require('object-assign');
@@ -16,7 +17,8 @@ var defaultOptions = {
   cookieMaxAge: 1000 * 60 * 60,
   cookiePath: '/',
   serverPath: '/adaptr',
-  clientVarName: 'adaptr'
+  clientVarName: 'adaptr',
+  profileModelPath: './lib/Profile'
 };
 
 var defaultStartHead = '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8"/>';
@@ -31,7 +33,7 @@ var adaptr = function (options) {
     if (pendingRequests[id]) {
       clearTimeout(pendingRequests[id].timeout);
       pendingRequests[id].callback(profile);
-      debug('Resolved request: ' + id);
+      debug('Resolved request', id);
     }
 
     delete pendingRequests[id];
@@ -44,38 +46,47 @@ var adaptr = function (options) {
 
     pendingRequests[id] = {
       timeout: setTimeout(function () {
+          debug('Timedout request', id);
           resolveRequest(id, new Profile());
         }, timeoutPeriod),
       callback: continueCallback
     };
 
-    debug('Paused request: ' + id);
+    debug('Paused request', id);
 
     return id;
   }
 
   function getClientMarkup (requestId, options, callback) {
-    var b = browserify(['./lib/client/client'], {
+    var b = browserify(null, {
       basedir: __dirname
     });
 
-    debug(options.detect);
     Object.keys(options.detect).forEach(function (key) {
-      b.require(options.detect[key].test);
+      b.require(options.detect[key].test + '.js', {
+        expose: options.detect[key].test
+      });
     });
+
+    b.require(options.profileModelPath + '.js', {
+      expose: './lib/Profile'
+    });
+
+    b.add(['./lib/client/client']);
 
     b.bundle(function (err, buffer) {
       var markup = '';
 
       if (err) {
-        debug(err);
+        error(err);
+        markup = '<!-- adaptr: An error occured generating the client bundle, check the log -->';
       } else {
         markup = '<script>' + buffer.toString() + '</script>';
 
         if (options.requestBeacon) {
           markup += '<noscript>' +
             '<link href="{serverPath}.css?id={requestId}" rel="stylesheet" />' +
-            '<noscript>';
+            '</noscript>';
         }
 
         markup = interpolate(markup, {
@@ -85,16 +96,33 @@ var adaptr = function (options) {
           cookiePath: options.cookiePath,
           cookieMaxAge: options.cookieMaxAge,
           requestBeacon: options.requestBeacon ? '1' : '',
-          detect: JSON.stringify(options.detect)
+          detect: JSON.stringify(options.detect),
+          data: JSON.stringify(options.data),
+          clientVarName: options.clientVarName
         });
       }
 
-      callback(markup);
+      callback(err, markup);
     });
+  }
+
+  function getCookieData (req, cookieName) {
+    var cookies = cookie.parse(req.headers.cookie || '');
+    var cookieValue = cookies[cookieName];
+    var data;
+
+    if (cookieValue) {
+      try {
+        data = JSON.parse(cookieValue);
+      } catch (e) {}
+    }
+
+    return data;
   }
 
   function serveBeacon (req, res) {
     var data;
+    var query;
 
     res.writeHead(200, {
       'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -107,11 +135,9 @@ var adaptr = function (options) {
 
     var info = url.parse(req.url);
     if (info && info.query) {
-      var query = querystring.parse(info.query);
+      query = querystring.parse(info.query);
 
-      try {
-        data = JSON.parse(query.profile);
-      } catch (e) {}
+      data = getCookieData(req, options.cookieName);
 
       var profile = new Profile(data);
       resolveRequest(query.id, profile);
@@ -131,18 +157,11 @@ var adaptr = function (options) {
           return;
         }
 
-        var cookies = cookie.parse(req.headers.cookie || '');
-        var cookieValue = cookies[options.cookieName];
-
         var callback = function (profile) {
           routeCallback(req, res, next, profile);
         };
 
-        if (cookieValue) {
-          try {
-            data = JSON.parse(cookieValue);
-          } catch (e) {}
-        }
+        data = getCookieData(req, options.cookieName);
 
         if (!data) {
           requestId = pauseRequest(callback, options.timeout);
@@ -161,13 +180,15 @@ var adaptr = function (options) {
           cookiePath: options.cookiePath,
           cookieMaxAge: options.cookieMaxAge,
           detect: options.detect,
-          requestBeacon: !data
+          data: data,
+          requestBeacon: !data,
+          clientVarName: options.clientVarName
         };
 
-        getClientMarkup(requestId, scriptOptions, function (markup) {
+        getClientMarkup(requestId, scriptOptions, function (err, markup) {
           res.write(markup);
 
-          if (data) {
+          if (data || err) {
             callback(new Profile(data));
           }
         });
