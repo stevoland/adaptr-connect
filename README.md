@@ -1,4 +1,4 @@
-# express-adaptr
+# adaptr-connect
 
 WIP
 
@@ -9,9 +9,9 @@ Client feature detection on your server
 Sometimes we want to make large changes in server rendered content based on client features but
 we have no chance of testing for features before the first request.
 
-express-adaptr allows us to pause a response until a script has run on the client which runs the
-feature tests and sends them to the server with a beacon request. It then stores a cookie to bypass
-this process for subsequent requests.
+adaptr-connect provides connect middleware which allows us to pause a response until a script has
+run on the client which runs the feature tests and sends them to the server with a beacon request.
+It then stores a cookie to bypass this process for subsequent requests.
 
 ## Features (TODO)
 

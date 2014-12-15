@@ -1,14 +1,17 @@
 {
-  "name": "express-adaptr",
+  "name": "adaptr-connect",
   "version": "0.0.0",
+  "author": "Stephen J. Collings <stevoland@gmail.com>",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stevoland/adaptr-connect"
+  },
+  "bugs": {
+    "url": "https://github.com/nodejitsu/stevoland/adaptr-connect/issues"
+  },
   "dependencies": {
-    "object-assign": "^2.0.0",
-    "debug": "^2.1.0",
-    "interpolate": "^0.1.0",
-    "debounce": "^1.0.0",
-    "cookie": "^0.1.2",
-    "browserify": "^7.0.0"
+    "adaptr-lib-server": "*"
   },
   "devDependencies": {
     "eslint": "^0.10.0"

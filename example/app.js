@@ -8,15 +8,17 @@ var port = 4000;
 
 var adaptr = require('../index');
 var adaptrInstance = adaptr({
-    timeout: 5000,
-    detect: {
-      viewportWidth: {
-        defaultValue: 960,
-        test: './lib/tests/viewportWidth',
-        update: './lib/updaters/viewportWidth'
+        viewportWidth: {
+          defaultValue: 960,
+          clientTest: 'adaptr-lib-detect/detect/viewportWidth',
+          clientUpdate: 'adaptr-lib-detect/update/onWindowResize'
+        },
+        serverFeature: {
+        }
+      }, {
+        timeout: 2000
       }
-    }
-});
+    );
 
 
 var writeStartHead = function (req, res) {

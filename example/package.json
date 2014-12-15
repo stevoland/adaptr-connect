@@ -1,14 +1,16 @@
 {
   "name": "adaptr-example",
   "version": "0.0.0",
+  "author": "Stephen J. Collings <stevoland@gmail.com>",
   "private": true,
   "scripts": {
-    "start": "DEBUG=adaptr ./node_modules/.bin/supervisor -w .. app.js"
+    "start": "DEBUG=adaptr:log,adaptr:error ./node_modules/.bin/supervisor -w .. app.js"
   },
   "dependencies": {
     "express": "~4",
     "cookie-parser": "^1.3.3",
-    "serve-favicon": "^2.1.7"
+    "serve-favicon": "^2.1.7",
+    "adaptr-lib-detect": "*"
   },
   "devDependencies": {
     "supervisor": "^0.6.0"
